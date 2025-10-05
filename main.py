@@ -1,10 +1,13 @@
 import easyocr
 import streamlit as st
+from streamlit_push_notifications import send_alert
 from PIL import Image, ImageEnhance,  ImageOps, ImageDraw
 import numpy as np
+from lang import languages
 
 upload = None
-reader = easyocr.Reader(['en'], gpu = True) # needs to run once
+language = ['en']
+reader = easyocr.Reader(language, gpu = False) # needs to run once
 
 if 'result' not in st.session_state:
     st.session_state.result = 'Text...'
@@ -48,12 +51,18 @@ def detect():
     except Exception as error: print(error)
 
 st.title('Image to Text')
+language1 = st.multiselect('Language(s) to be read from image', languages.keys(), default = ['English'])
+if language != list(map(lambda x: languages[x], language1)):
+    language = list(map(lambda x: languages[x], language1))
+    reader = easyocr.Reader(language, gpu = False) # needs to run once
+
 upload = st.file_uploader("Image to be read", type = ['png', 'jpeg', 'jpg'])
 
 if upload != None:
     st.image(upload, caption = 'Uploaded Image') 
-    detect()
-if st.session_state.cropimage != None: st.image(st.session_state.cropimage, caption = 'edited Image')
+    if language != []: detect()
+    else: st.warning('Please select a language to detect from the image'); send_alert('Please select a language to detect from the image')
+if st.session_state.cropimage != None and language != []: st.image(st.session_state.cropimage, caption = 'edited Image')
 
 resultBox = st.text_area('Text from image', placeholder = st.session_state.result, disabled = True, key = 'result')
 
@@ -70,7 +79,7 @@ resultBox = st.text_area('Text from image', placeholder = st.session_state.resul
 
 
 
-
+# make sure to put text saying that they must put the right langauge to detect corrctly
 # ? give streamlit front end option to change modules (pytesseract, ocr, kerus ocr) to see different results
 # *TODO: give option change language too (find out how to include all languages and then impliment in the form that each lirbary like pytesseract requries)
 # *TODO: look at other paramters for easyocr's read text function to give more changability for hte usaer in stremalit like how confident the model must be to show as text
@@ -82,6 +91,10 @@ resultBox = st.text_area('Text from image', placeholder = st.session_state.resul
 # *TODO: make it so thjat when they remove the iamge, the image display and text go to normal or get rmeoved
 # *TODO: make it so that when removing the thing (as it still counts as a change) it won't refresh and detect again calling the detect function (maybe just change dtect instread of not calling it)
 # *TODO: when refrresh, and file goes away, text needs to reset too
+# fix that if removing image then it shoudl remove edited iamge too and also when person didn't pick language
+# also when don't pick language remvoe the result text too (and do this for other times too - think when -)
+# make cookie type memroy thing
+#make it so that program is contrrlled by button so that person can add many lagnagues (do manychanges) and then click detect to see the result isntead of the program constantly running after each small change
 
 #DONE
 # * crop, icnrease  brightness and clairty and turn into balck and white (opencv) or l-25+1 something with numpy as image is numpy array
